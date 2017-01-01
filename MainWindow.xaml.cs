@@ -9,6 +9,7 @@ using System.Windows;
 using System.Diagnostics;
 using System.Windows.Input;
 using System.Collections.Generic;
+using System.Text;
 
 namespace VirtualDisks
 {
@@ -87,12 +88,57 @@ namespace VirtualDisks
 			if (name == null)
 				return;
 
+			string xml = null;
+			try
+			{
+				xml = File.ReadAllText(name + "\\BackupSpecs.xml", Encoding.Unicode);
+			}
+			catch
+			{
+			}
+
 			string[] files = Directory.GetFiles(name, "*.vhd");
+			List<Record> records = new List<Record>();
+
 			foreach (var file in files)
 			{
-				Record record = new Record(file, Properties.Settings.Default.MountedFiles.Contains(file));
-				Records.Add(record);
+				string path = FindPath(xml, file);
+				if (path.Length == 3)
+				{
+					Record record = new Record(file, path, Properties.Settings.Default.MountedFiles.Contains(file));
+					records.Add(record);
+				}
 			}
+
+			records.Sort((x, y) => x.Path.CompareTo(y.Path));
+			for (int i = 1; i < records.Count; i++)
+				records[i].ShortName = records[i].Date = "";
+			Records.AddRange(records);
+		}
+
+		private string FindPath(string xml, string fileName)
+		{
+			if (xml == null)
+				return "";
+
+			string name = Path.GetFileNameWithoutExtension(fileName);
+			int i = xml.IndexOf(name);
+			if (i < 0)
+				return "";
+			i += name.Length;
+
+			string str = "FilePath=\"";
+			i = xml.IndexOf(str, i);
+			if (i < 0)
+				return "";
+			i += str.Length;
+
+			int j = xml.IndexOf("\"", i);
+			if (j < 0)
+				return "";
+
+			string path = xml.Substring(i, j - i);
+			return path;
 		}
 
 		bool MountVHD(string fileName, bool mode)

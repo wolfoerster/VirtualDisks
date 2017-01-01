@@ -9,9 +9,10 @@ namespace VirtualDisks
 {
 	public class Record
 	{
-		public Record(string fileName, bool isMounted)
+		public Record(string fileName, string path, bool isMounted)
 		{
 			FileName = fileName;
+			Path = path;
 			mounted = isMounted;
 
 			string dir = "WindowsImageBackup\\";
@@ -33,6 +34,7 @@ namespace VirtualDisks
 
 		public string FileName { get; set; }
 		public string ShortName { get; set; }
+		public string Path { get; set; }
 		public string Date { get; set; }
 		public string Size { get; set; }
 		public static Func<string, bool, bool> OnMountedChanged;
