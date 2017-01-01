@@ -177,5 +177,16 @@ namespace VirtualDisks
 			File.Delete(script);
 			return result;
 		}
+
+		DriveInfo GetDelta(DriveInfo[] infos1, DriveInfo[] infos2)
+		{
+			foreach (var info2 in infos2)
+			{
+				DriveInfo info1 = infos1.FirstOrDefault(x => x.Name == info2.Name);
+				if (info1 == null)
+					return info2;
+			}
+			return null;
+		}
 	}
 }

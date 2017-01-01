@@ -1,7 +1,7 @@
 # VirtualDisks
 Tool to easily mount/unmount VHD files from Windows system image backups
 
-<img src="https://s28.postimg.org/o4eqzq9b1/Virtual_Disks.jpg" style="width:880px;">
+<img src="https://s28.postimg.org/hncud4it9/Virtual_Disks.jpg" style="width:880px;">
 
 Windows 7 comes with a system image backup utility that can be launched by the Control Panel (Backup and Restore/Create a system image) or via command line (sdclt.exe /BLBBACKUPWIZARD). This tool, which is also available in Windows 8 and 10, allows you to create backups of your complete hard drives. These backups can later be used to restore a crashed system.
 

@@ -4,11 +4,25 @@
 //***************************************************************************************
 using System;
 using System.IO;
+using System.Linq;
+using System.ComponentModel;
 
 namespace VirtualDisks
 {
-	public class Record
+	public class Record : INotifyPropertyChanged
 	{
+		#region INotifyPropertyChanged Members
+
+		public event PropertyChangedEventHandler PropertyChanged;
+
+		protected void FirePropertyChanged(string propertyName)
+		{
+			if (PropertyChanged != null && propertyName != null)
+				PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+		}
+
+		#endregion
+
 		public Record(string fileName, string path, bool isMounted)
 		{
 			FileName = fileName;
@@ -29,7 +43,7 @@ namespace VirtualDisks
 
 			FileInfo info = new FileInfo(fileName);
 			double size = info.Length / 1024.0 / 1024.0 / 1024.0;
-			Size = size.ToString("F3");
+			Size = size.ToString("F3") + " GB";
 		}
 
 		public string FileName { get; set; }
@@ -37,6 +51,7 @@ namespace VirtualDisks
 		public string Path { get; set; }
 		public string Date { get; set; }
 		public string Size { get; set; }
+		public string NewPath { get; set; }
 		public static Func<string, bool, bool> OnMountedChanged;
 
 		public bool Mounted
@@ -48,10 +63,33 @@ namespace VirtualDisks
 				{
 					mounted = value;
 					if (OnMountedChanged != null)
-						OnMountedChanged(FileName, mounted);
+					{
+						DriveInfo[] oldInfos = DriveInfo.GetDrives();
+						if (OnMountedChanged(FileName, mounted))
+						{
+							NewPath = GetNewDrive(oldInfos);
+							FirePropertyChanged("NewPath");
+						}
+					}
+					FirePropertyChanged("Mounted");
 				}
 			}
 		}
 		private bool mounted;
+
+		string GetNewDrive(DriveInfo[] oldInfos)
+		{
+			DriveInfo[] newInfos = DriveInfo.GetDrives();
+			if (newInfos.Length <= oldInfos.Length)
+				return "";
+
+			foreach (var newInfo in newInfos)
+			{
+				DriveInfo oldInfo = oldInfos.FirstOrDefault(x => x.Name == newInfo.Name);
+				if (oldInfo == null)
+					return newInfo.Name;
+			}
+			return "";
+		}
 	}
 }

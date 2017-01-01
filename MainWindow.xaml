@@ -10,8 +10,9 @@
             <TextBlock Text="{Binding ShortName}" Width="120"/>
             <TextBlock Text="{Binding Date}" Width="80"/>
             <TextBlock Text="{Binding Path}" Width="30"/>
-            <TextBlock Text="{Binding Size}" Width="50" TextAlignment="Right"/>
+            <TextBlock Text="{Binding Size}" Width="60" TextAlignment="Right"/>
             <CheckBox IsChecked="{Binding Mounted}" Margin="10,2,2,2"/>
+            <TextBlock Text="{Binding NewPath}" Width="30" TextAlignment="Center"/>
           </StackPanel>
         </DataTemplate>
       </ListBox.ItemTemplate>
