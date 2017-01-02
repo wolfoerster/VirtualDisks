@@ -3,19 +3,24 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="VirtualDisks" SizeToContent="WidthAndHeight" ResizeMode="CanMinimize">
   <Grid Margin="4">
-    <ListBox Name="listBox" ItemsSource="{Binding Records}">
-      <ListBox.ItemTemplate>
-        <DataTemplate>
+    <TreeView ItemsSource="{Binding Records}">
+      <TreeView.ItemContainerStyle>
+        <Style TargetType="{x:Type TreeViewItem}">
+          <Setter Property="IsExpanded" Value="True"/>
+        </Style>
+      </TreeView.ItemContainerStyle>
+      <TreeView.ItemTemplate>
+        <HierarchicalDataTemplate ItemsSource="{Binding Children}">
           <StackPanel Orientation="Horizontal">
-            <TextBlock Text="{Binding ShortName}" Width="120"/>
-            <TextBlock Text="{Binding Date}" Width="80"/>
-            <TextBlock Text="{Binding Path}" Width="30"/>
-            <TextBlock Text="{Binding Size}" Width="60" TextAlignment="Right"/>
-            <CheckBox IsChecked="{Binding Mounted}" Margin="10,2,2,2"/>
-            <TextBlock Text="{Binding NewPath}" Width="30" TextAlignment="Center"/>
+            <TextBlock Text="{Binding Name}" MinWidth="20"/>
+            <StackPanel Orientation="Horizontal" Visibility="{Binding Visibility}">
+              <TextBlock Text="{Binding Size}" Width="60" TextAlignment="Right"/>
+              <CheckBox IsChecked="{Binding Mounted}" Margin="10,2,2,2"/>
+              <TextBlock Text="{Binding Drive}" Width="30" TextAlignment="Center"/>
+            </StackPanel>
           </StackPanel>
-        </DataTemplate>
-      </ListBox.ItemTemplate>
-    </ListBox>
+        </HierarchicalDataTemplate>
+      </TreeView.ItemTemplate>
+    </TreeView>
   </Grid>
 </Window>

@@ -1,10 +1,8 @@
 ﻿//***************************************************************************************
-// Copyright © 2017 Wolfgang Foerster (wolfoerster@gmx.de). All Rights Reserved.
+// Copyright © 2017 wolfoerster@gmx.de. All Rights Reserved.
 //
 //***************************************************************************************
-using System;
 using System.IO;
-using System.Linq;
 using System.Windows;
 using System.Diagnostics;
 using System.Windows.Input;
@@ -31,18 +29,6 @@ namespace VirtualDisks
 
         void MeClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            SaveSettings();
-        }
-
-        void SaveSettings()
-        {
-            string files = "";
-            foreach (var record in Records)
-            {
-                if (record.Mounted)
-                    files += record.FileName + "|";
-            }
-            Properties.Settings.Default.MountedFiles = files;
             Properties.Settings.Default.Left = Left;
             Properties.Settings.Default.Top = Top;
             Properties.Settings.Default.Save();
@@ -62,7 +48,7 @@ namespace VirtualDisks
             Records = new List<Record>();
             Record.OnMountedChanged = MountVHD;
 
-            DriveInfo[] infos = DriveInfo.GetDrives();
+            var infos = DriveInfo.GetDrives();
             foreach (var info in infos)
             {
                 if (string.IsNullOrWhiteSpace(info.Name)
@@ -71,73 +57,76 @@ namespace VirtualDisks
                     || !info.IsReady)
                     continue;
 
-                string name = info.Name + "WindowsImageBackup";
+                var name = info.Name + "WindowsImageBackup";
                 if (!Directory.Exists(name))
                     continue;
 
-                string[] subdirs = Directory.GetDirectories(name);
+                var subdirs = Directory.GetDirectories(name);
                 foreach (var subdir in subdirs)
                     CheckDirectory(subdir);
             }
         }
 
-        void CheckDirectory(string name)
+        void CheckDirectory(string dir)
         {
-            string[] subdirs = Directory.GetDirectories(name);
-            name = subdirs.FirstOrDefault(x => x.IndexOf("\\Backup ") > 0);
-            if (name == null)
-                return;
+            var computer = new Record(dir.Substring(dir.LastIndexOf("\\") + 1));
+            Records.Add(computer);
 
-            string xml = null;
-            try
+            var subdirs = Directory.GetDirectories(dir);
+            foreach (var subdir in subdirs)
             {
-                xml = File.ReadAllText(name + "\\BackupSpecs.xml", Encoding.Unicode);
-            }
-            catch
-            {
-            }
+                var str = "\\Backup ";
+                var idx = subdir.IndexOf(str);
+                if (idx < 0)
+                    continue;
 
-            string[] files = Directory.GetFiles(name, "*.vhd");
-            List<Record> records = new List<Record>();
+                var specs = File.ReadAllText(subdir + "\\BackupSpecs.xml", Encoding.Unicode);
+                var backup = new Record(Beautify(subdir.Substring(idx + str.Length)));
+                computer.Children.Add(backup);
 
-            foreach (var file in files)
-            {
-                string path = FindPath(xml, file);
-                if (path.Length == 3)
+                var vhds = new List<Record>();
+                var files = Directory.GetFiles(subdir, "*.vhd");
+                foreach (var file in files)
                 {
-                    Record record = new Record(file, path, Properties.Settings.Default.MountedFiles.Contains(file));
-                    records.Add(record);
+                    var path = FindPath(specs, file);
+                    if (path.Length == 3)
+                    {
+                        bool isMounted = Properties.Settings.Default.MountedFiles.Contains(file);
+                        vhds.Add(new Record(path, file, isMounted));
+                    }
                 }
-            }
 
-            records.Sort((x, y) => x.Path.CompareTo(y.Path));
-            for (int i = 1; i < records.Count; i++)
-                records[i].ShortName = records[i].Date = "";
-            Records.AddRange(records);
+                vhds.Sort((vhd1, vhd2) => vhd1.Name.CompareTo(vhd2.Name));
+                vhds.ForEach(vhd => backup.Children.Add(vhd));
+            }
         }
 
-        private string FindPath(string xml, string fileName)
+        string Beautify(string name)
         {
-            if (xml == null)
-                return "";
+            name = name.Insert(name.Length - 4, ":");
+            name = name.Insert(name.Length - 2, ":");
+            return name;
+        }
 
-            string name = Path.GetFileNameWithoutExtension(fileName);
-            int i = xml.IndexOf(name);
+        string FindPath(string specs, string fileName)
+        {
+            var name = Path.GetFileNameWithoutExtension(fileName);
+            var i = specs.IndexOf(name);
             if (i < 0)
                 return "";
             i += name.Length;
 
-            string str = "FilePath=\"";
-            i = xml.IndexOf(str, i);
+            var str = "FilePath=\"";
+            i = specs.IndexOf(str, i);
             if (i < 0)
                 return "";
             i += str.Length;
 
-            int j = xml.IndexOf("\"", i);
+            var j = specs.IndexOf("\"", i);
             if (j < 0)
                 return "";
 
-            string path = xml.Substring(i, j - i);
+            var path = specs.Substring(i, j - i);
             return path;
         }
 
@@ -146,17 +135,17 @@ namespace VirtualDisks
             if (!File.Exists(fileName))
                 return false;
 
-            SaveSettings();
-            string script = Path.GetTempPath() + "diskpart.txt";
+            Remember(fileName);
+            var script = Path.GetTempPath() + "diskpart.txt";
             File.WriteAllText(script, string.Format("select vdisk file=\"{0}\"\r\n{1} vdisk", fileName, mode ? "attach" : "detach"));
 
-            Process process = new Process();
+            var process = new Process();
             process.StartInfo.FileName = "diskpart.exe";
             process.StartInfo.Arguments = string.Format("/s \"{0}\"", script);
             process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             process.Start();
 
-            bool result = false;
+            var result = false;
             while (true)
             {
                 process.WaitForExit(7000);
@@ -176,6 +165,13 @@ namespace VirtualDisks
 
             File.Delete(script);
             return result;
+        }
+
+        void Remember(string fileName)
+        {
+            var files = Properties.Settings.Default.MountedFiles;
+            Properties.Settings.Default.MountedFiles = files.Contains(fileName) ? files.Replace(fileName, "") : files + fileName;
+            Properties.Settings.Default.Save();
         }
     }
 }

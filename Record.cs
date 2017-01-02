@@ -1,11 +1,13 @@
 ﻿//***************************************************************************************
-// Copyright © 2017 Wolfgang Foerster (wolfoerster@gmx.de). All Rights Reserved.
+// Copyright © 2017 wolfoerster@gmx.de. All Rights Reserved.
 //
 //***************************************************************************************
 using System;
 using System.IO;
 using System.Linq;
 using System.ComponentModel;
+using System.Collections.Generic;
+using System.Windows;
 
 namespace VirtualDisks
 {
@@ -23,36 +25,38 @@ namespace VirtualDisks
 
         #endregion
 
-        public Record(string fileName, string path, bool isMounted)
+        public Record()
+        {
+            Children = new List<Record>();
+        }
+
+        public Record(string name)
+            : this()
+        {
+            Name = name;
+        }
+
+        public Record(string name, string fileName, bool isMounted)
+            : this(name)
         {
             FileName = fileName;
-            Path = path;
             mounted = isMounted;
-
-            string dir = "WindowsImageBackup\\";
-            int i = fileName.IndexOf(dir);
-            string name = fileName.Substring(i + dir.Length);
-
-            dir = "\\Backup ";
-            i = name.IndexOf(dir);
-            ShortName = name.Substring(0, i);
-
-            name = name.Substring(i + dir.Length);
-            i = name.IndexOf(' ');
-            Date = name.Substring(0, i);
-
             FileInfo info = new FileInfo(fileName);
             double size = info.Length / 1024.0 / 1024.0 / 1024.0;
             Size = size.ToString("F3") + " GB";
         }
 
+        public string Name { get; set; }
         public string FileName { get; set; }
-        public string ShortName { get; set; }
-        public string Path { get; set; }
-        public string Date { get; set; }
         public string Size { get; set; }
-        public string NewPath { get; set; }
+        public string Drive { get; set; }
+        public List<Record> Children { get; set; }
         public static Func<string, bool, bool> OnMountedChanged;
+
+        public Visibility Visibility
+        {
+            get { return FileName == null ? Visibility.Collapsed : Visibility.Visible; }
+        }
 
         public bool Mounted
         {
@@ -67,8 +71,8 @@ namespace VirtualDisks
                         DriveInfo[] oldInfos = DriveInfo.GetDrives();
                         if (OnMountedChanged(FileName, mounted))
                         {
-                            NewPath = GetNewPath(oldInfos);
-                            FirePropertyChanged("NewPath");
+                            Drive = GetDrive(oldInfos);
+                            FirePropertyChanged("Drive");
                         }
                     }
                 }
@@ -76,7 +80,7 @@ namespace VirtualDisks
         }
         private bool mounted;
 
-        string GetNewPath(DriveInfo[] oldInfos)
+        string GetDrive(DriveInfo[] oldInfos)
         {
             DriveInfo[] newInfos = DriveInfo.GetDrives();
             if (newInfos.Length <= oldInfos.Length)

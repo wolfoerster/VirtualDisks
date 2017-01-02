@@ -10,9 +10,9 @@ using System.Windows;
 [assembly: AssemblyTitle("VirtualDisks")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Wolfgang Foerster")]
+[assembly: AssemblyCompany("wolfoerster@gmx.de")]
 [assembly: AssemblyProduct("VirtualDisks")]
-[assembly: AssemblyCopyright("Copyright © 2017 Wolfgang Foerster (wolfoerster@gmx.de)")]
+[assembly: AssemblyCopyright("Copyright © 2017 wolfoerster@gmx.de")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
